@@ -1,1 +1,116 @@
 https://1drv.ms/f/c/26d48f9a8caabd23/EhyVAILJPs9JtfEjbaYcoyQBn6GIj1QvBM6Lrmaasiexmg?e=r7GWdC  -  Eclipse Project
+
+
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+import java.io.*;
+
+public class ExcelUpdater {
+
+    private static final String FILE_PATH = "path/to/your/excel.xlsx";
+
+    // Function 1: Add account if not already present
+    public static void addAccount(String accountName) throws IOException {
+        FileInputStream fis = new FileInputStream(FILE_PATH);
+        Workbook workbook = new XSSFWorkbook(fis);
+        Sheet sheet = workbook.getSheetAt(0);
+
+        int accountColIndex = 0; // "Accounts" column is assumed to be A
+        boolean exists = false;
+
+        for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+            Row row = sheet.getRow(i);
+            if (row != null) {
+                Cell cell = row.getCell(accountColIndex);
+                if (cell != null && cell.getCellType() == CellType.STRING
+                        && cell.getStringCellValue().trim().equals(accountName)) {
+                    exists = true;
+                    break;
+                }
+            }
+        }
+
+        // If not found, create new row
+        if (!exists) {
+            Row newRow = sheet.createRow(sheet.getLastRowNum() + 1);
+            Cell accountCell = newRow.createCell(accountColIndex);
+            accountCell.setCellValue(accountName);
+        }
+
+        fis.close();
+        FileOutputStream fos = new FileOutputStream(FILE_PATH);
+        workbook.write(fos);
+        workbook.close();
+        fos.close();
+    }
+
+    // Function 2: Update column value for an account
+    public static void updateColumn(String accountName, String columnName, String value) throws IOException {
+        FileInputStream fis = new FileInputStream(FILE_PATH);
+        Workbook workbook = new XSSFWorkbook(fis);
+        Sheet sheet = workbook.getSheetAt(0);
+
+        int headerRowIndex = 0;
+        Row headerRow = sheet.getRow(headerRowIndex);
+        int columnIndex = -1;
+
+        // Find column index by name
+        for (Cell cell : headerRow) {
+            if (cell.getStringCellValue().trim().equalsIgnoreCase(columnName)) {
+                columnIndex = cell.getColumnIndex();
+                break;
+            }
+        }
+
+        if (columnIndex == -1) {
+            workbook.close();
+            fis.close();
+            throw new RuntimeException("Column '" + columnName + "' not found in header.");
+        }
+
+        int accountColIndex = 0;
+        int targetRowIndex = -1;
+
+        for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+            Row row = sheet.getRow(i);
+            if (row != null) {
+                Cell cell = row.getCell(accountColIndex);
+                if (cell != null && cell.getCellType() == CellType.STRING
+                        && cell.getStringCellValue().trim().equals(accountName)) {
+                    targetRowIndex = i;
+                    break;
+                }
+            }
+        }
+
+        // If account not found, create it first
+        if (targetRowIndex == -1) {
+            targetRowIndex = sheet.getLastRowNum() + 1;
+            Row newRow = sheet.createRow(targetRowIndex);
+            newRow.createCell(accountColIndex).setCellValue(accountName);
+        }
+
+        Row rowToUpdate = sheet.getRow(targetRowIndex);
+        if (rowToUpdate == null) rowToUpdate = sheet.createRow(targetRowIndex);
+
+        Cell targetCell = rowToUpdate.getCell(columnIndex);
+        if (targetCell == null) targetCell = rowToUpdate.createCell(columnIndex);
+
+        targetCell.setCellValue(value);
+
+        fis.close();
+        FileOutputStream fos = new FileOutputStream(FILE_PATH);
+        workbook.write(fos);
+        workbook.close();
+        fos.close();
+    }
+
+    // Sample usage
+    public static void main(String[] args) throws IOException {
+        addAccount("AUTNew123"); // Function 1
+        updateColumn("AUTNew123", "Model", "Cargo"); // Function 2
+        updateColumn("AUTNew123", "General Info", "Y");
+        updateColumn("AUTNew123", "Policy No", "POL99999");
+    }
+}
