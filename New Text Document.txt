@@ -31,6 +31,33 @@ https://1drv.ms/f/c/26d48f9a8caabd23/EhyVAILJPs9JtfEjbaYcoyQBn6GIj1QvBM6Lrmaasie
 
 
 
+public static String getLastAccountName(String excelPath, String sheetName) {
+    String lastAccount = null;
+    try (FileInputStream fis = new FileInputStream(new File(excelPath));
+         Workbook workbook = WorkbookFactory.create(fis)) {
+
+        Sheet sheet = workbook.getSheet(sheetName);
+        int lastRowNum = sheet.getLastRowNum();
+
+        for (int i = lastRowNum; i >= 1; i--) { // skip header row
+            Row row = sheet.getRow(i);
+            if (row != null) {
+                Cell cell = row.getCell(0); // assuming account names are in the 1st column (A)
+                if (cell != null && cell.getCellType() != CellType.BLANK) {
+                    lastAccount = cell.getStringCellValue();
+                    break;
+                }
+            }
+        }
+
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+    return lastAccount;
+}
+
+
+
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
