@@ -199,3 +199,109 @@ public class ExcelUpdater {
         updateColumn("AUTNew123", "Policy No", "POL99999");
     }
 }
+
+
+Great question — Java's Robot class doesn't handle special characters automatically (like @, #, _, $, -, &) because these often require pressing Shift or AltGr in combination with a key. You need to manually handle each special character by simulating the proper key combinations.
+
+
+---
+
+public static void typeString(Robot robot, String text) {
+    for (char c : text.toCharArray()) {
+        switch (c) {
+            case '@':
+                pressShiftedKey(robot, KeyEvent.VK_2);
+                break;
+            case '#':
+                pressShiftedKey(robot, KeyEvent.VK_3);
+                break;
+            case '$':
+                pressShiftedKey(robot, KeyEvent.VK_4);
+                break;
+            case '%':
+                pressShiftedKey(robot, KeyEvent.VK_5);
+                break;
+            case '&':
+                pressShiftedKey(robot, KeyEvent.VK_7);
+                break;
+            case '*':
+                pressShiftedKey(robot, KeyEvent.VK_8);
+                break;
+            case '(':
+                pressShiftedKey(robot, KeyEvent.VK_9);
+                break;
+            case ')':
+                pressShiftedKey(robot, KeyEvent.VK_0);
+                break;
+            case '_':
+                pressShiftedKey(robot, KeyEvent.VK_MINUS);
+                break;
+            case '-':
+                pressKey(robot, KeyEvent.VK_MINUS);
+                break;
+            case '=':
+                pressKey(robot, KeyEvent.VK_EQUALS);
+                break;
+            case '+':
+                pressShiftedKey(robot, KeyEvent.VK_EQUALS);
+                break;
+            case '!':
+                pressShiftedKey(robot, KeyEvent.VK_1);
+                break;
+            case ' ':
+                pressKey(robot, KeyEvent.VK_SPACE);
+                break;
+            default:
+                typeChar(robot, c);
+        }
+
+        robot.delay(100); // Add slight delay between keystrokes
+    }
+}
+
+public static void pressShiftedKey(Robot robot, int key) {
+    robot.keyPress(KeyEvent.VK_SHIFT);
+    robot.keyPress(key);
+    robot.keyRelease(key);
+    robot.keyRelease(KeyEvent.VK_SHIFT);
+}
+
+public static void pressKey(Robot robot, int key) {
+    robot.keyPress(key);
+    robot.keyRelease(key);
+}
+
+public static void typeChar(Robot robot, char c) {
+    int keyCode = KeyEvent.getExtendedKeyCodeForChar(c);
+    if (keyCode == KeyEvent.VK_UNDEFINED) {
+        throw new RuntimeException("Cannot type character: " + c);
+    }
+
+    boolean isUpper = Character.isUpperCase(c);
+    if (isUpper) robot.keyPress(KeyEvent.VK_SHIFT);
+
+    robot.keyPress(keyCode);
+    robot.keyRelease(keyCode);
+
+    if (isUpper) robot.keyRelease(KeyEvent.VK_SHIFT);
+}
+
+
+---
+
+
+
+---
+
+⚠️ Limitations
+
+This approach assumes a US QWERTY keyboard layout. If your keyboard layout is different (e.g., AZERTY, QWERTZ), some key codes will differ.
+
+Some symbols (e.g., ^, ~) may require more specific handling with AltGr or custom mapping.
+
+
+
+---
+
+Would you like a version for non-US keyboards too? Or want to include more symbols like ^, {, }?
+
