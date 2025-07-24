@@ -305,3 +305,58 @@ Some symbols (e.g., ^, ~) may require more specific handling with AltGr or custo
 
 Would you like a version for non-US keyboards too? Or want to include more symbols like ^, {, }?
 
+
+
+..................
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.devtools.DevTools;
+import org.openqa.selenium.devtools.v112.network.Network;
+import org.openqa.selenium.devtools.v112.network.model.Headers;
+
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+
+public class BasicAuthHandler {
+
+    public static void main(String[] args) {
+
+        ChromeOptions options = new ChromeOptions();
+        options.addArguments("--headless"); // or "--headless=new" for newer versions
+        options.addArguments("--window-size=1920,1080");
+
+        ChromeDriver driver = new ChromeDriver(options);
+
+        // Initialize DevTools
+        DevTools devTools = driver.getDevTools();
+        devTools.createSession();
+
+        // Enable network and set auth headers
+        devTools.send(Network.enable(Optional.empty(), Optional.empty(), Optional.empty()));
+
+        String userPass = "yourUsername:yourPassword";
+        String encoded = Base64.getEncoder().encodeToString(userPass.getBytes());
+
+        Map<String, Object> headersMap = new HashMap<>();
+        headersMap.put("Authorization", "Basic " + encoded);
+        Headers headers = new Headers(headersMap);
+
+        devTools.send(Network.setExtraHTTPHeaders(headers));
+
+        // Step 1: Navigate to main page
+        driver.get("https://swuiweb01.int.westfieldspecialty.net/LighthousePreProd/GAAPRIEEngine/Report");
+
+        // Step 2: Click the "Report" link (assume locating by link text or partial text)
+        driver.findElement(By.linkText("Report")).click();
+
+        // Now, auth header is sent on background requests too — popup won't appear.
+
+        // Optional: wait and validate report opens
+        Thread.sleep(3000); // Use WebDriverWait instead in real code
+
+        System.out.println("Report page title: " + driver.getTitle());
+        driver.quit();
+    }
+}
