@@ -360,3 +360,77 @@ public class BasicAuthHandler {
         driver.quit();
     }
 }
+
+
+
+Apache poi
+.................
+
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+
+public class ExcelComparator {
+
+    public static void main(String[] args) throws IOException {
+        String file1Path = "path/to/downloaded_file.xlsx"; // from Selenium
+        String file2Path = "path/to/db_data_file.xlsx"; // created from DB result
+
+        compareExcelFiles(file1Path, file2Path);
+    }
+
+    public static void compareExcelFiles(String file1, String file2) throws IOException {
+        FileInputStream fis1 = new FileInputStream(file1);
+        FileInputStream fis2 = new FileInputStream(file2);
+
+        Workbook workbook1 = new XSSFWorkbook(fis1);
+        Workbook workbook2 = new XSSFWorkbook(fis2);
+
+        Sheet sheet1 = workbook1.getSheetAt(0);
+        Sheet sheet2 = workbook2.getSheetAt(0);
+
+        int rowCount = Math.max(sheet1.getLastRowNum(), sheet2.getLastRowNum());
+
+        for (int i = 0; i <= rowCount; i++) {
+            Row row1 = sheet1.getRow(i);
+            Row row2 = sheet2.getRow(i);
+
+            int colCount = Math.max(
+                row1 != null ? row1.getLastCellNum() : 0,
+                row2 != null ? row2.getLastCellNum() : 0
+            );
+
+            for (int j = 0; j < colCount; j++) {
+                Cell cell1 = row1 != null ? row1.getCell(j) : null;
+                Cell cell2 = row2 != null ? row2.getCell(j) : null;
+
+                String value1 = getCellValueAsString(cell1);
+                String value2 = getCellValueAsString(cell2);
+
+                if (!value1.equals(value2)) {
+                    String cellAddress = CellReference.convertNumToColString(j) + (i + 1);
+                    System.out.println("❌ Mismatch at " + cellAddress + ": File1 = '" + value1 + "' | File2 = '" + value2 + "'");
+                }
+            }
+        }
+
+        workbook1.close();
+        workbook2.close();
+        fis1.close();
+        fis2.close();
+    }
+
+    private static String getCellValueAsString(Cell cell) {
+        if (cell == null) return "";
+        switch (cell.getCellType()) {
+            case STRING:  return cell.getStringCellValue().trim();
+            case NUMERIC: return String.valueOf(cell.getNumericCellValue()).trim();
+            case BOOLEAN: return String.valueOf(cell.getBooleanCellValue()).trim();
+            case FORMULA: return cell.getCellFormula().trim();
+            case BLANK:   return "";
+            default:      return "";
+        }
+    }
+}
