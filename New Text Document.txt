@@ -434,3 +434,72 @@ public class ExcelComparator {
         }
     }
 }
+
+
+
+CSV Comparison 
+........................... 
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+
+public class CSVComparator {
+
+    public static void main(String[] args) throws IOException {
+        File file1 = getLatestFile("C:/Users/YourName/Downloads"); // or path to first CSV
+        File file2 = new File("path/to/db_generated.csv");
+
+        compareCSVFiles(file1, file2);
+    }
+
+    public static void compareCSVFiles(File f1, File f2) throws IOException {
+        BufferedReader br1 = new BufferedReader(new FileReader(f1));
+        BufferedReader br2 = new BufferedReader(new FileReader(f2));
+
+        String line1, line2;
+        int row = 1;
+
+        while ((line1 = br1.readLine()) != null & (line2 = br2.readLine()) != null) {
+            String[] cells1 = line1.split(",", -1);
+            String[] cells2 = line2.split(",", -1);
+
+            int colCount = Math.max(cells1.length, cells2.length);
+
+            for (int col = 0; col < colCount; col++) {
+                String val1 = col < cells1.length ? cells1[col].trim() : "";
+                String val2 = col < cells2.length ? cells2[col].trim() : "";
+
+                if (!val1.equals(val2)) {
+                    String cellAddress = getExcelStyleAddress(row, col);
+                    System.out.println("❌ Mismatch at " + cellAddress + ": File1 = '" + val1 + "' | File2 = '" + val2 + "'");
+                }
+            }
+            row++;
+        }
+
+        br1.close();
+        br2.close();
+    }
+
+    private static String getExcelStyleAddress(int row, int col) {
+        return (char) ('A' + col) + String.valueOf(row);  // Simple A-Z logic (supports up to 26 columns)
+    }
+
+    // Reuse your latest-file logic
+    public static File getLatestFile(String folderPath) {
+        File dir = new File(folderPath);
+        File[] files = dir.listFiles(file -> file.isFile() && file.getName().endsWith(".csv"));
+
+        if (files == null || files.length == 0) return null;
+
+        File latest = files[0];
+        for (File file : files) {
+            if (file.lastModified() > latest.lastModified()) {
+                latest = file;
+            }
+        }
+        return latest;
+    }
+}
