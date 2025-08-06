@@ -503,3 +503,31 @@ public class CSVComparator {
         return latest;
     }
 }
+
+
+.............................................. 
+Properties props = new Properties();
+props.setProperty("mail.store.protocol", "imaps");
+Session session = Session.getInstance(props, null);
+
+Store store = session.getStore();
+store.connect("imap-mail.outlook.com", "your_email@outlook.com", "your_password");
+
+Folder inbox = store.getFolder("INBOX");
+inbox.open(Folder.READ_ONLY);
+
+Message message = inbox.getMessage(inbox.getMessageCount());
+String content = message.getContent().toString();
+
+System.out.println("Email Body: " + content);
+
+// Optional: Extract link using regex
+Pattern pattern = Pattern.compile("https?://\\S+");  // Change based on link format
+Matcher matcher = pattern.matcher(content);
+if (matcher.find()) {
+    String fileLink = matcher.group();
+    System.out.println("Link: " + fileLink);
+
+    // Use Desktop to open the link
+    Desktop.getDesktop().browse(new URI(fileLink));
+}
