@@ -531,3 +531,11 @@ if (matcher.find()) {
     // Use Desktop to open the link
     Desktop.getDesktop().browse(new URI(fileLink));
 }
+
+
+Java mailx
+<dependency>
+    <groupId>com.sun.mail</groupId>
+    <artifactId>jakarta.mail</artifactId>
+    <version>2.0.1</version> <!-- or latest -->
+</dependency>
