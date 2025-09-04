@@ -1,0 +1,126 @@
+------Generic data load--------
+
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import java.io.FileInputStream;
+import java.util.*;
+
+public class ExcelUtils {
+    public static Object[][] getDataAsMap(String filePath, String sheetName) throws Exception {
+        FileInputStream fis = new FileInputStream(filePath);
+        Workbook workbook = new XSSFWorkbook(fis);
+        Sheet sheet = workbook.getSheet(sheetName);
+
+        int rowCount = sheet.getPhysicalNumberOfRows();
+        int colCount = sheet.getRow(0).getPhysicalNumberOfCells();
+
+        Object[][] data = new Object[rowCount - 1][1];  // one Map per row
+
+        // headers (TestCase, TestData1, TestData2...)
+        Row headerRow = sheet.getRow(0);
+        List<String> headers = new ArrayList<>();
+        for (int j = 0; j < colCount; j++) {
+            headers.add(headerRow.getCell(j).toString());
+        }
+
+        for (int i = 1; i < rowCount; i++) {
+            Row row = sheet.getRow(i);
+            Map<String, String> rowData = new HashMap<>();
+
+            for (int j = 0; j < colCount; j++) {
+                Cell cell = row.getCell(j);
+                String rawValue = (cell == null) ? "" : cell.toString().trim();
+
+                if (j == 0) {
+                    // first column is TestCase name
+                    rowData.put("TestCase", rawValue);
+                } else {
+                    // parse key=value
+                    if (rawValue.contains("=")) {
+                        String[] parts = rawValue.split("=", 2);
+                        rowData.put(parts[0], parts[1]);  // key -> value
+                    }
+                }
+            }
+            data[i - 1][0] = rowData;
+        }
+
+        workbook.close();
+        return data;
+    }
+}
+
+
+-------------------how to use------------
+
+import org.testng.annotations.DataProvider;
+
+public class DataProviders {
+    @DataProvider(name = "excelData")
+    public Object[][] getData() throws Exception {
+        return ExcelUtils.getDataAsMap("TestData.xlsx", "Sheet1");
+    }
+}
+
+
+---------test data for specific testcase-------
+public static Map<String, String> getDataForTestCase(String filePath, String sheetName, String testCaseId) throws Exception {
+    FileInputStream fis = new FileInputStream(filePath);
+    Workbook workbook = new XSSFWorkbook(fis);
+    Sheet sheet = workbook.getSheet(sheetName);
+
+    int rowCount = sheet.getPhysicalNumberOfRows();
+    int colCount = sheet.getRow(0).getPhysicalNumberOfCells();
+
+    Row headerRow = sheet.getRow(0);
+
+    Map<String, String> rowData = new HashMap<>();
+
+    for (int i = 1; i < rowCount; i++) {
+        Row row = sheet.getRow(i);
+        Cell firstCell = row.getCell(0);
+
+        if (firstCell != null && firstCell.toString().equalsIgnoreCase(testCaseId)) {
+            // Found required test case row
+            for (int j = 1; j < colCount; j++) {
+                Cell cell = row.getCell(j);
+                String rawValue = (cell == null) ? "" : cell.toString().trim();
+
+                if (rawValue.contains("=")) {
+                    String[] parts = rawValue.split("=", 2);
+                    rowData.put(parts[0], parts[1]);  // key=value
+                }
+            }
+            break;
+        }
+    }
+
+    workbook.close();
+    return rowData;
+}
+
+
+
+-------------------how to use------------------
+
+import org.testng.annotations.Test;
+import java.util.Map;
+
+public class MyTest {
+    @Test
+    public void runSpecificTestCase() throws Exception {
+        String testCaseId = "TC02";   // change this ID based on your need
+        Map<String, String> data = ExcelUtils.getDataForTestCase("TestData.xlsx", "Sheet1", testCaseId);
+
+        System.out.println("Running TestCase: " + testCaseId);
+        System.out.println("Data: " + data);
+
+        // Use directly
+        if (data.containsKey("username"))
+            System.out.println("Username: " + data.get("username"));
+        if (data.containsKey("password"))
+            System.out.println("Password: " + data.get("password"));
+        if (data.containsKey("menu"))
+            System.out.println("Menu: " + data.get("menu"));
+    }
+}
